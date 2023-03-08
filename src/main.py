@@ -41,16 +41,20 @@ if __name__ == "__main__":
     os.environ["OMP_NUM_THREADS"] = "1"
 
     parser = arguments.parser()
-    parser.add_argument('--clients', type=int, default=10)
+    parser.add_argument('--clients', type=int, default=100)
+    parser.add_argument('--sel_clients', type=int, default=10)
     parser.add_argument('--fraction', type=float, default=1.0)
     parser.add_argument('--local_epoch', type=int, default=4)
     parser.add_argument('--distribution', type=str, default='iid')
+    parser.add_argument('--sel_scheme', type=str, default='ideal')
     parser.add_argument('--n_procs', type=int, default=1)
     parser.add_argument('--weighted_avg', type=int, default=0)
     parser.add_argument('--beta', type=float, default= 0.3)
     parser.add_argument('--checkpoint_round', type=int, default=300)
+    parser.add_argument('--iteration', type=int, default=10)
     parser.add_argument('--resume_checkpoint', type=int, default=0)
     parser.add_argument('--lambda_lr', type=float, default=1.0)
+    parser.add_argument('--lambda_loss', type=float, default=0.01)
     parser.add_argument('--epsilon', type=int, default=1e-03)
     parser.add_argument('--climb', type=int, default=0)
 
