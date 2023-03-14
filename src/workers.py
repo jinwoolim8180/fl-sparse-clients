@@ -40,7 +40,7 @@ def gpu_test_worker(testQ, device, args):
     if not args.resume_checkpoint:
         acc_list = []
     else:
-        with open('../save/checkpoint/result.pkl', 'rb') as f:
+        with open('../save/checkpoint/result_.pkl', 'rb') as f:
             acc_list = pickle.load(f)
     while True:
         msg = testQ.get()

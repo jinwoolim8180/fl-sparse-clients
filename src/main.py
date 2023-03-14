@@ -88,7 +88,7 @@ if __name__ == "__main__":
             clients.append(Client(i, indices[i], args))
     
     else:
-        with open('../save/checkpoint/state.pkl', 'rb') as f:
+        with open('../save/checkpoint/state_.pkl', 'rb') as f:
             checkpoint = pickle.load(f)
             clients = checkpoint['clients']
             server = checkpoint['server']
