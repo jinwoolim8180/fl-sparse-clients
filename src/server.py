@@ -80,13 +80,14 @@ class Server:
                     for client_id in sel_clients:
                         self.weights[client_id] += _param_dot_product(self.client_delta[client_id], diff) + self.args.lambda_loss * self.client_losses[client_id]
 
-            for i in range(self.args.clients):
-                self.weights[i] /= sum(self.weights)
+            # _sum = sum(self.weights)
+            # for i in range(self.args.clients):
+            #     self.weights[i] /= _sum
 
             # update delta_avg by updated weights
             print('selection complete.')
             delta_avg = {k: torch.zeros(v.shape, dtype=v.dtype) for k, v in self.model_parameters.items()}
-            for client_id in self.client_delta.keys():
+            for client_id in sel_clients:
                     for k in delta_avg.keys():
                         delta_avg[k] = delta_avg[k] + (self.client_delta[client_id][k] * self.weights[client_id]).type(delta_avg[k].dtype)
 
@@ -152,7 +153,7 @@ class Server:
             print('selection complete.')
             self.curr_sel_clients = sel_clients
             delta_avg = {k: torch.zeros(v.shape, dtype=v.dtype) for k, v in self.model_parameters.items()}
-            for client_id in self.client_delta.keys():
+            for client_id in sel_clients:
                     for k in delta_avg.keys():
                         delta_avg[k] = delta_avg[k] + (self.client_delta[client_id][k] * self.weights[client_id]).type(delta_avg[k].dtype)
                         
@@ -193,6 +194,7 @@ class Server:
             client_losses = np.array(self.client_losses)
             topk = np.argpartition(client_losses, -self.args.sel_clients)[-self.args.sel_clients:]
             weights = (1. + self.lambda_var - torch.mean(self.lambda_var)) / self.args.sel_clients
+            delta_avg = {k: torch.zeros(v.shape, dtype=v.dtype) for k, v in self.model_parameters.items()}
             for client_id in topk:
                 for k in delta_avg.keys():
                     delta_avg[k] = delta_avg[k] + (self.client_delta[client_id][k] * weights[client_id]).type(delta_avg[k].dtype)
@@ -200,6 +202,7 @@ class Server:
         elif self.args.sel_scheme == 'random':
             topk = np.random.permutation(self.args.clients)[-self.args.sel_clients:]
             weights = (1. + self.lambda_var - torch.mean(self.lambda_var)) / self.args.sel_clients
+            delta_avg = {k: torch.zeros(v.shape, dtype=v.dtype) for k, v in self.model_parameters.items()}
             for client_id in topk:
                 for k in delta_avg.keys():
                     delta_avg[k] = delta_avg[k] + (self.client_delta[client_id][k] * weights[client_id]).type(delta_avg[k].dtype)

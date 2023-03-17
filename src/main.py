@@ -15,6 +15,7 @@ from workers import *
 from dataset import split_client_indices
 import models
 import torch.backends.cudnn as cudnn
+from dataset.pickle_dataset import FemnistDataset
 
 torch.manual_seed(0)
 torch.cuda.manual_seed(0)

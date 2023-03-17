@@ -1,6 +1,6 @@
 import torch
 from argparse import Namespace
-from . import cifar10, mnist, femnist
+from . import cifar10, mnist, emnist, femnist, pickle_dataset
 import numpy as np
 
 def get_dataset(args, split):
@@ -8,33 +8,40 @@ def get_dataset(args, split):
         dataset = cifar10.get_dataset(split)
     elif args.dataset == 'mnist':
         dataset = mnist.get_dataset(split)
+    elif args.dataset == 'emnist':
+        dataset = emnist.get_dataset(split)
     elif args.dataset == 'femnist':
-        dataset = femnist.get_dataset(split)
+        pdataset = pickle_dataset.PickleDataset(pickle_root="../data", dataset_name="femnist")
+        if split == 'train':
+            dataset = pdataset.get_dataset_pickle(dataset_type='train', client_id=0)
+        else:
+            dataset = pdataset.get_dataset_pickle(dataset_type='test')
     else:
         raise NotImplementedError('dataset not implemented.')
 
-    if not torch.is_tensor(dataset.targets):
-        dataset.targets = torch.tensor(dataset.targets, dtype=torch.long)
+    if args.dataset != 'femnist':
+        if not torch.is_tensor(dataset.targets):
+            dataset.targets = torch.tensor(dataset.targets, dtype=torch.long)
 
-    if split == 'train':
-        labels = dataset.targets
-        label_indices = {l: (labels == l).nonzero().squeeze().type(torch.LongTensor) for l in torch.unique(labels)}
-        total_indices = []
-        for l, indices in label_indices.items():
-            if l < args.n_minority_classes:
-                total_indices.append(indices[torch.randperm(len(indices) // args.rho)])
-            else:
-                total_indices.append(indices)
+        if split == 'train':
+            labels = dataset.targets
+            label_indices = {l: (labels == l).nonzero().squeeze().type(torch.LongTensor) for l in torch.unique(labels)}
+            total_indices = []
+            for l, indices in label_indices.items():
+                if l < args.n_minority_classes:
+                    total_indices.append(indices[torch.randperm(len(indices) // args.rho)])
+                else:
+                    total_indices.append(indices)
 
-        total_indices = torch.cat(total_indices)
-        dataset.data = dataset.data[total_indices]
-        dataset.targets = labels[total_indices]
+            total_indices = torch.cat(total_indices)
+            dataset.data = dataset.data[total_indices]
+            dataset.targets = labels[total_indices]
     return dataset
 
 
 def split_client_indices(dataset, args: Namespace) -> list:
     if args.dataset == 'femnist':
-        return sampling_femnist(dataset, args.clients)
+        return [[] for i in range(args.clients)]
     if args.distribution == 'iid':
         return sampling_iid(dataset, args.clients)
     if args.distribution == 'imbalance':

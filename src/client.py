@@ -3,6 +3,7 @@ import torch.nn as nn
 import copy
 from torch.utils.data import DataLoader, Subset
 from loss import BalancedSoftmax, FocalLoss
+from dataset.pickle_dataset import PickleDataset
 
 class Client:
     def __init__(self, nodeID, node_indices, args):
@@ -13,7 +14,12 @@ class Client:
     def train(self, device, model: nn.Module, total_train_dataset, optimizer):
         model.to(device)
 
-        train_loader = DataLoader(Subset(total_train_dataset, self.node_indices), self.args.batch_size, shuffle=True, num_workers=0)
+        if self.args.dataset == 'femnist':
+            pdataset = PickleDataset(pickle_root="../data", dataset_name="femnist")
+            train_dataset = pdataset.get_dataset_pickle(dataset_type="train", client_id=self.nodeID)
+            train_loader = DataLoader(train_dataset, self.args.batch_size, shuffle=True, num_workers=0)
+        else:
+            train_loader = DataLoader(Subset(total_train_dataset, self.node_indices), self.args.batch_size, shuffle=True, num_workers=0)
 
         criterion = nn.CrossEntropyLoss()
         test_loss = 0.
@@ -25,7 +31,7 @@ class Client:
                 test_loss += criterion(outputs, labels)
 
         old_param = copy.deepcopy(model.state_dict())
-        labels = total_train_dataset.targets[self.node_indices]
+        # labels = total_train_dataset.targets[self.node_indices]
 
         if self.args.loss == 'ce':
             criterion = nn.CrossEntropyLoss()
@@ -33,9 +39,9 @@ class Client:
         elif self.args.loss == 'fl':
             criterion = FocalLoss(gamma=self.args.focal_loss)
 
-        elif self.args.loss == 'bs':
-            n_samples = [(labels == i).count_nonzero() for i in labels.unique()]
-            criterion = BalancedSoftmax(n_samples)
+        # elif self.args.loss == 'bs':
+        #     n_samples = [(labels == i).count_nonzero() for i in labels.unique()]
+        #     criterion = BalancedSoftmax(n_samples)
 
 
         for _ in range(self.args.local_epoch):
